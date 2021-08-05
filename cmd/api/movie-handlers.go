@@ -60,7 +60,33 @@ func (app *application) getAllMovies(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) deleteMovie(w http.ResponseWriter, r *http.Request) {
+	// get movie id
+	params := httprouter.ParamsFromContext(r.Context())
+	id, err := strconv.Atoi(params.ByName("id"))
+	if err != nil {
+		app.logger.Println("error converting string id to int")
+		app.errorJSON(w, http.StatusBadRequest, err)
+		return
+	}
 
+	// delete movie from db
+	err = app.models.DB.DeleteMovie(id)
+	if err != nil {
+		app.logger.Println("error deleting a movie")
+		app.errorJSON(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	ok := jsonResponse{
+		OK: true,
+	}
+
+	err = app.writeJSON(w, http.StatusOK, ok, "response")
+	if err != nil {
+		app.logger.Println("error marshalling json response")
+		app.errorJSON(w, http.StatusInternalServerError, err)
+		return
+	}
 }
 
 type MoviePayload struct {
