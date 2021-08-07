@@ -64,7 +64,7 @@ func (app *application) Signin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// write to client
-	app.writeJSON(w, http.StatusOK, jwtBytes, "response")
+	app.writeJSON(w, http.StatusOK, string(jwtBytes), "response")
 }
 
 func createHash(password string) string {
