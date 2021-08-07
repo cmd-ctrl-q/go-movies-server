@@ -22,6 +22,9 @@ type config struct {
 	db   struct {
 		dsn string // db connection string
 	}
+	jwt struct {
+		secret string
+	}
 }
 
 type AppStatus struct {
@@ -40,9 +43,11 @@ type application struct {
 func main() {
 	var cfg config
 
+	// StringVar(&store.into, "cmd-line-name", "value", "description")
 	flag.IntVar(&cfg.port, "port", 4000, "Server port to listen on")
 	flag.StringVar(&cfg.env, "env", "development", "Application environment (development|production)")
 	flag.StringVar(&cfg.db.dsn, "dsn", "postgres://plutonium@localhost/go_movies?sslmode=disable", "Postgres connection string")
+	flag.StringVar(&cfg.jwt.secret, "jwt-secret", os.Getenv("SECRET"), "secret")
 	flag.Parse()
 
 	// log.Ldate|log.Ltime add date and time to logger
