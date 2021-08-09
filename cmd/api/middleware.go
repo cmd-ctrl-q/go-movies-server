@@ -47,32 +47,32 @@ func (app *application) checkToken(next http.Handler) http.Handler {
 		// do hmac check
 		claims, err := jwt.HMACCheck([]byte(token), []byte(app.config.jwt.secret))
 		if err != nil {
-			app.errorJSON(w, http.StatusUnauthorized, errors.New("unauthorized - failed hmac check"))
+			app.errorJSON(w, http.StatusForbidden, errors.New("unauthorized - failed hmac check"))
 			return
 		}
 
 		// is token still valid at this time
 		if !claims.Valid(time.Now()) {
-			app.errorJSON(w, http.StatusUnauthorized, errors.New("unauthorized - token expired"))
+			app.errorJSON(w, http.StatusForbidden, errors.New("unauthorized - token expired"))
 			return
 		}
 
 		// check if audience is acceptable
 		if !claims.AcceptAudience("mydomain.com") {
-			app.errorJSON(w, http.StatusUnauthorized, errors.New("unauthorized - invalid audience"))
+			app.errorJSON(w, http.StatusForbidden, errors.New("unauthorized - invalid audience"))
 			return
 		}
 
 		// check issuer is your domain
 		if claims.Issuer != "mydomain.com" {
-			app.errorJSON(w, http.StatusUnauthorized, errors.New("unauthorized - invalid issuer"))
+			app.errorJSON(w, http.StatusForbidden, errors.New("unauthorized - invalid issuer"))
 			return
 		}
 
 		// get user id from token
 		userID, err := strconv.ParseInt(claims.Subject, 10, 64) // 64 bit
 		if err != nil {
-			app.errorJSON(w, http.StatusUnauthorized, errors.New("unauthorized"))
+			app.errorJSON(w, http.StatusForbidden, errors.New("unauthorized"))
 			return
 		}
 

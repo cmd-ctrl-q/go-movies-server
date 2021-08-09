@@ -29,6 +29,7 @@ func (app *application) routes() http.Handler {
 	secure := alice.New(app.checkToken)
 
 	router.HandlerFunc(http.MethodGet, "/status", app.statusHandler)
+	router.HandlerFunc(http.MethodPost, "/v1/graphql/list", app.moviesGraphQL)
 
 	router.HandlerFunc(http.MethodPost, "/v1/signin", app.Signin)
 
@@ -38,11 +39,9 @@ func (app *application) routes() http.Handler {
 
 	router.HandlerFunc(http.MethodGet, "/v1/genres", app.getAllGenres)
 
-	// router.HandlerFunc(http.MethodPost, "/v1/admin/editmovie", app.editMovie)
 	// secure the function using the middleware wrap function and alice package
 	router.POST("/v1/admin/editmovie", app.wrap(secure.ThenFunc(app.editMovie)))
 
-	// router.HandlerFunc(http.MethodGet, "/v1/admin/deletemovie/:id", app.deleteMovie)
 	router.GET("/v1/admin/deletemovie/:id", app.wrap(secure.ThenFunc(app.deleteMovie)))
 
 	return app.enableCORS(router)
