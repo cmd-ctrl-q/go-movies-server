@@ -1,18 +1,24 @@
 package main
 
 import (
+	"encoding/json"
+	"errors"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/cmd-ctrl-q/go-movies-server/models"
 	"github.com/graphql-go/graphql"
 )
 
+var err error
 var movies []*models.Movie
 
 // GraphQL schema definition
 var fields = graphql.Fields{
+	// returns a single movie
 	"movie": &graphql.Field{
 		Type:        movieType,
 		Description: "Get movie by id",
@@ -34,11 +40,35 @@ var fields = graphql.Fields{
 			return nil, nil
 		},
 	},
+	// return a list of movies
 	"list": &graphql.Field{
 		Type:        graphql.NewList(movieType),
 		Description: "Get all movies",
 		Resolve: func(params graphql.ResolveParams) (interface{}, error) {
 			return movies, nil
+		},
+	},
+	"search": &graphql.Field{
+		Type:        graphql.NewList(movieType),
+		Description: "Search movies by title",
+		Args: graphql.FieldConfigArgument{
+			"titleContains": &graphql.ArgumentConfig{
+				Type: graphql.String,
+			},
+		},
+		Resolve: func(params graphql.ResolveParams) (interface{}, error) {
+			var theList []*models.Movie
+			search, ok := params.Args["titleContains"].(string)
+			if ok {
+				for _, currentMovie := range movies {
+					if strings.Contains(currentMovie.Title, search) {
+						// add to list
+						log.Println("Found one")
+						theList = append(theList, currentMovie)
+					}
+				}
+			}
+			return theList, nil
 		},
 	},
 }
@@ -78,20 +108,44 @@ var movieType = graphql.NewObject(
 			"updated_at": &graphql.Field{
 				Type: graphql.DateTime,
 			},
+			"poster": &graphql.Field{
+				Type: graphql.String,
+			},
 		},
 	},
 )
 
 func (app *application) moviesGraphQL(w http.ResponseWriter, r *http.Request) {
-	_, err := app.models.DB.All()
+	movies, err = app.models.DB.All()
 	if err != nil {
 		app.errorJSON(w, http.StatusInternalServerError, err)
 		return
 	}
 
 	q, err := io.ReadAll(r.Body)
+	if err != nil {
+		app.errorJSON(w, http.StatusBadRequest, fmt.Errorf("error reading body: %w", err))
+	}
 	query := string(q)
 
 	log.Println(query)
 
+	rootQuery := graphql.ObjectConfig{Name: "RootQuery", Fields: fields}
+	schemaConfig := graphql.SchemaConfig{Query: graphql.NewObject(rootQuery)}
+	schema, err := graphql.NewSchema(schemaConfig)
+	if err != nil {
+		app.errorJSON(w, http.StatusBadRequest, errors.New("failed to create schema"))
+		return
+	}
+
+	params := graphql.Params{Schema: schema, RequestString: query}
+	resp := graphql.Do(params)
+	if len(resp.Errors) > 0 {
+		app.errorJSON(w, http.StatusBadRequest, fmt.Errorf("failed: %+v", resp.Errors))
+	}
+
+	j, _ := json.MarshalIndent(resp, "", "\t")
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(j)
 }

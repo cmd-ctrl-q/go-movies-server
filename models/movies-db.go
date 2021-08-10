@@ -16,10 +16,11 @@ func (m DBModel) Get(id int) (*Movie, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
+	// coalesce(poster, '') means return poster if not null, else return an emtpy string
 	query := `
 		select 
 			id, title, description, year, release_date, rating, runtime, mpaa_rating,
-			created_at, updated_at
+			created_at, updated_at, coalesce(poster, '')
 		from 
 			movies 
 		where
@@ -41,6 +42,7 @@ func (m DBModel) Get(id int) (*Movie, error) {
 		&movie.MPAARating,
 		&movie.CreatedAt,
 		&movie.UpdatedAt,
+		&movie.Poster,
 	)
 	if err != nil {
 		return nil, err
@@ -215,8 +217,8 @@ func (m *DBModel) InsertMovie(movie Movie) error {
 
 	stmt := `
 		insert into movies (title, description, year, release_date, runtime, 
-			rating, mpaa_rating, created_at, updated_at) 
-			values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+			rating, mpaa_rating, created_at, updated_at, poster) 
+			values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 	`
 
 	_, err := m.DB.ExecContext(ctx, stmt,
@@ -229,6 +231,7 @@ func (m *DBModel) InsertMovie(movie Movie) error {
 		movie.MPAARating,
 		movie.CreatedAt,
 		movie.UpdatedAt,
+		movie.Poster,
 	)
 	if err != nil {
 		return err
@@ -246,9 +249,9 @@ func (m *DBModel) UpdateMovie(movie Movie) error {
 			movies 
 		set title = $1, description = $2, year = $3, release_date = $4, 
 			runtime = $5, rating = $6, mpaa_rating = $7, 
-			updated_at = $8 
+			updated_at = $8, poster = $9
 		where
-			id = $9
+			id = $10
 	`
 
 	_, err := m.DB.ExecContext(ctx, stmt,
@@ -260,6 +263,7 @@ func (m *DBModel) UpdateMovie(movie Movie) error {
 		movie.Rating,
 		movie.MPAARating,
 		movie.UpdatedAt,
+		movie.Poster,
 		movie.ID,
 	)
 	if err != nil {
