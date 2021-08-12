@@ -70,13 +70,11 @@ func (app *application) checkToken(next http.Handler) http.Handler {
 		}
 
 		// get user id from token
-		userID, err := strconv.ParseInt(claims.Subject, 10, 64) // 64 bit
+		_, err = strconv.ParseInt(claims.Subject, 10, 64) // 64 bit
 		if err != nil {
 			app.errorJSON(w, http.StatusForbidden, errors.New("unauthorized"))
 			return
 		}
-
-		app.logger.Println("Valid user:", userID)
 
 		next.ServeHTTP(w, r)
 	})

@@ -271,7 +271,6 @@ func getPoster(movie models.Movie) models.Movie {
 		log.Fatal("THEMOVIEDB_API_KEY env variable is empty")
 	}
 	theUrl := "https://api.themoviedb.org/3/search/movie?api_key="
-	log.Println(theUrl + key + "&query=" + url.QueryEscape(movie.Title))
 
 	// make request
 	req, err := http.NewRequest("GET", theUrl+key+"&query="+url.QueryEscape(movie.Title), nil)

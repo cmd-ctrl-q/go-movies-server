@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"strings"
 
@@ -63,7 +62,6 @@ var fields = graphql.Fields{
 				for _, currentMovie := range movies {
 					if strings.Contains(currentMovie.Title, search) {
 						// add to list
-						log.Println("Found one")
 						theList = append(theList, currentMovie)
 					}
 				}
@@ -127,8 +125,6 @@ func (app *application) moviesGraphQL(w http.ResponseWriter, r *http.Request) {
 		app.errorJSON(w, http.StatusBadRequest, fmt.Errorf("error reading body: %w", err))
 	}
 	query := string(q)
-
-	log.Println(query)
 
 	rootQuery := graphql.ObjectConfig{Name: "RootQuery", Fields: fields}
 	schemaConfig := graphql.SchemaConfig{Query: graphql.NewObject(rootQuery)}
